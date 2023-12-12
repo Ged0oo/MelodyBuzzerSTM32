@@ -26,8 +26,7 @@
 /* USER CODE BEGIN Includes */
 
 #include "../Inc/melody.h"
-
-
+uint8_t buttonPressCount = 0;
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -100,12 +99,43 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+
+
+      GPIO_InitTypeDef GPIO_InitStruct = {0};
+
+      __HAL_RCC_GPIOA_CLK_ENABLE(); // Enable GPIOA clock
+
+      // Button pin
+	  GPIO_InitStruct.Pin = GPIO_PIN_8;
+	  GPIO_InitStruct.Mode = GPIO_MODE_INPUT; // Interrupt on rising edge
+	  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+	  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+	  uint8_t pinState = HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_8);
+	  uint8_t flage = 0;
+
   while (1)
   {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  MelodyArray[0]();
+	pinState = HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_8);
+
+	if (pinState == GPIO_PIN_SET)
+	{
+		if(flage == 1)
+		{
+			buttonPressCount++;
+			flage = 0;
+		}
+		HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
+		MelodyArray[buttonPressCount]();
+	}
+	else if (pinState == GPIO_PIN_RESET)
+	{
+		HAL_TIM_PWM_Stop(&htim3, TIM_CHANNEL_1);
+		flage = 1;
+	}
   }
   /* USER CODE END 3 */
 }
@@ -138,7 +168,7 @@ void SystemClock_Config(void)
 
   /** Initializes the CPU, AHB and APB buses clocks
   */
-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK |
+  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK  | RCC_CLOCKTYPE_SYSCLK |
                                 RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
@@ -181,9 +211,6 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
-
-
-
 
 /* USER CODE END 4 */
 
